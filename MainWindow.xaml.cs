@@ -49,16 +49,18 @@ namespace App1
         private CancellationTokenSource? _cancellationTokenSource;
         private static InputSimulator sim = new InputSimulator();
         static byte cnt = 0;
+        [DllImport("user32.dll")]
+        static extern int GetDpiForWindow(IntPtr hWnd);
 
         public MainWindow()
         {
             this.InitializeComponent();
             this.Title = "左手デバイス";
-            IntPtr hWnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            WindowId myWndId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hWnd);
-            AppWindow appWindow = AppWindow.GetFromWindowId(myWndId);
-
-            appWindow.Resize(new SizeInt32(800, 500));
+            nint windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            double DefaultPixelsPerInch = 96D;
+            double dpiScale = GetDpiForWindow(windowHandle) / DefaultPixelsPerInch; AppWindow.ResizeClient(new SizeInt32(
+                (int)(500 * dpiScale),
+                (int)(300 * dpiScale)));
             Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread().TryEnqueue(
            Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
            new Microsoft.UI.Dispatching.DispatcherQueueHandler(() =>

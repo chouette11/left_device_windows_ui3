@@ -20,6 +20,7 @@ using System.Net;
 using Microsoft.UI;
 using Windows.Graphics;
 using Microsoft.UI.Windowing;
+using System.Runtime.InteropServices;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -46,13 +47,16 @@ namespace App1
 
     public sealed partial class BlankWindow1 : Window
     {
+        [DllImport("user32.dll")]
+        static extern int GetDpiForWindow(IntPtr hWnd);
         public BlankWindow1()
         {
-            IntPtr hWnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            WindowId myWndId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hWnd);
-            AppWindow appWindow = AppWindow.GetFromWindowId(myWndId);
+            nint windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            double DefaultPixelsPerInch = 96D;
 
-            appWindow.Resize(new SizeInt32(1200, 800));
+        double dpiScale = GetDpiForWindow(windowHandle) / DefaultPixelsPerInch; AppWindow.ResizeClient(new SizeInt32(
+                (int)(770 * dpiScale),
+                (int)(450 * dpiScale)));
             this.InitializeComponent();
         }
 
