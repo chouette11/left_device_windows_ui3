@@ -64,7 +64,6 @@ namespace App1
 
         private async void ButtonSend_Click(String value, ActionType actionType)
         {
-            string ipAddress = "192.168.11.1";
 
             if (string.IsNullOrEmpty(ipAddress))
             {
