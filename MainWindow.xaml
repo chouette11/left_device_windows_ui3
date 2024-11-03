@@ -22,7 +22,6 @@
         <!-- メインコンテンツ -->
         <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
             <Image x:Name="myImage"  Width="200" Height="200"/>
-            <TextBlock x:Name="myTextBlock" Text="スマホで左手デバイスのモバイルアプリでQRコードを読み取ってください" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </StackPanel>
     </StackPanel>
 </Window>
