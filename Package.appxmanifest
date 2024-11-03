@@ -10,7 +10,7 @@
   <Identity
     Name="KeiichiroFukuda.Windows"
     Publisher="CN=1A8B0986-5C85-4F20-8931-1D6C260F51D5"
-    Version="1.1.0.0" />
+    Version="1.1.1.0" />
 
   <mp:PhoneIdentity PhoneProductId="55236d1f-e952-40de-a96e-16e73a480906" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
