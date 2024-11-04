@@ -22,6 +22,12 @@
         <!-- メインコンテンツ -->
         <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
             <Image x:Name="myImage"  Width="200" Height="200"/>
+            <ToggleSwitch
+                x:Name="LaunchOnStartupToggle"
+                Header="PCの起動時にこのアプリを起動する"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Toggled="LaunchOnStartupToggle_Toggled"/>
         </StackPanel>
     </StackPanel>
 </Window>
