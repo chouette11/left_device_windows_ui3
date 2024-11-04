@@ -33,6 +33,7 @@ using Windows.Graphics.Imaging;
 using Microsoft.UI;
 using Windows.Graphics;
 using Microsoft.UI.Windowing;
+using Windows.ApplicationModel;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -55,6 +56,8 @@ namespace App1
         public MainWindow()
         {
             this.InitializeComponent();
+            CheckStartupTaskStatus();
+
             this.Title = "左手デバイス";
             nint windowHandle = WinRT.Interop.WindowNative.GetWindowHandle(this);
             double DefaultPixelsPerInch = 96D;
@@ -68,6 +71,91 @@ namespace App1
                MainWindow_Activated();
            }));
 
+        }
+
+        private async void LaunchOnStartupToggle_Toggled(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                LaunchOnStartupToggle.IsEnabled = false; // トグルの操作を一時的に無効化
+                await ToggleLaunchOnStartup(LaunchOnStartupToggle.IsOn);
+            }
+            catch (Exception ex)
+            {
+                // エラーが発生した場合にログを出力
+                ContentDialog errorDialog = new ContentDialog()
+                {
+                    Title = "Error",
+                    Content = $"An error occurred: {ex.Message}",
+                    CloseButtonText = "OK"
+                };
+                await errorDialog.ShowAsync();
+            }
+            finally
+            {
+                LaunchOnStartupToggle.IsEnabled = true; // 操作を再度有効化
+            }
+        }
+
+        // 起動時にスタートアップタスクの状態を確認し、トグルボタンの状態を更新
+        private async void CheckStartupTaskStatus()
+        {
+            var startupTask = await StartupTask.GetAsync("LaunchOnStartupTaskId");
+            UpdateToggleState(startupTask.State);
+        }
+
+        // トグルボタンの状態を設定
+        private void UpdateToggleState(StartupTaskState state)
+        {
+            LaunchOnStartupToggle.IsEnabled = true;
+            switch (state)
+            {
+                case StartupTaskState.Enabled:
+                    LaunchOnStartupToggle.IsOn = true;
+                    break;
+                case StartupTaskState.Disabled:
+                case StartupTaskState.DisabledByUser:
+                    LaunchOnStartupToggle.IsOn = false;
+                    break;
+                default:
+                    LaunchOnStartupToggle.IsEnabled = false;
+                    break;
+            }
+        }
+
+        private async Task ToggleLaunchOnStartup(bool enable)
+        {
+            try
+            {
+                var startupTask = await StartupTask.GetAsync("LaunchOnStartupTaskId");
+                switch (startupTask.State)
+                {
+                    case StartupTaskState.Enabled when !enable:
+                        startupTask.Disable();
+                        break;
+                    case StartupTaskState.Disabled when enable:
+                        var updatedState = await startupTask.RequestEnableAsync();
+                        UpdateToggleState(updatedState);
+                        break;
+                    case StartupTaskState.DisabledByUser when enable:
+                      
+                        break;
+                    default:
+                      
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                // 例外のキャッチとエラーハンドリング
+                ContentDialog errorDialog = new ContentDialog()
+                {
+                    Title = "Error",
+                    Content = $"An unexpected error occurred: {ex.Message}",
+                    CloseButtonText = "OK"
+                };
+                await errorDialog.ShowAsync();
+            }
         }
 
         private void MainWindow_Activated()
@@ -634,53 +722,171 @@ namespace App1
         {
             Dictionary<string, VirtualKeyCode> keyCodeMap = new Dictionary<string, VirtualKeyCode>
             {
-                { "a", VirtualKeyCode.VK_A },
-                { "b", VirtualKeyCode.VK_B },
-                { "c", VirtualKeyCode.VK_C },
-                { "d", VirtualKeyCode.VK_D },
-                { "e", VirtualKeyCode.VK_E },
-                { "f", VirtualKeyCode.VK_F },
-                { "g", VirtualKeyCode.VK_G },
-                { "h", VirtualKeyCode.VK_H },
-                { "i", VirtualKeyCode.VK_I },
-                { "j", VirtualKeyCode.VK_J },
-                { "k", VirtualKeyCode.VK_K },
-                { "l", VirtualKeyCode.VK_L },
-                { "m", VirtualKeyCode.VK_M },
-                { "n", VirtualKeyCode.VK_N },
-                { "o", VirtualKeyCode.VK_O },
-                { "p", VirtualKeyCode.VK_P },
-                { "q", VirtualKeyCode.VK_Q },
-                { "r", VirtualKeyCode.VK_R },
-                { "s", VirtualKeyCode.VK_S },
-                { "t", VirtualKeyCode.VK_T },
-                { "u", VirtualKeyCode.VK_U },
-                { "v", VirtualKeyCode.VK_V },
-                { "w", VirtualKeyCode.VK_W },
-                { "x", VirtualKeyCode.VK_X },
-                { "y", VirtualKeyCode.VK_Y },
-                { "z", VirtualKeyCode.VK_Z },
-                { "1", VirtualKeyCode.VK_1 },
-                { "2", VirtualKeyCode.VK_2 },
-                { "3", VirtualKeyCode.VK_3 },
-                { "4", VirtualKeyCode.VK_4 },
-                { "5", VirtualKeyCode.VK_5 },
-                { "6", VirtualKeyCode.VK_6 },
-                { "7", VirtualKeyCode.VK_7 },
-                { "8", VirtualKeyCode.VK_8 },
-                { "9", VirtualKeyCode.VK_9 },
-                { "0", VirtualKeyCode.VK_0 },
-                { "enter", VirtualKeyCode.RETURN },
-                { "space", VirtualKeyCode.SPACE },
-                { "esc", VirtualKeyCode.ESCAPE },
-                { "tab", VirtualKeyCode.TAB },
-                { "delete", VirtualKeyCode.DELETE },
-                { "backspace", VirtualKeyCode.BACK },
-                { "left_arrow", VirtualKeyCode.LEFT },
-                { "right_arrow", VirtualKeyCode.RIGHT },
-                { "up_arrow", VirtualKeyCode.UP },
-                { "down_arrow", VirtualKeyCode.DOWN }
+                { "lbutton", VirtualKeyCode.LBUTTON },          // マウスの左ボタン
+                { "rbutton", VirtualKeyCode.RBUTTON },          // マウスの右ボタン
+                { "mbutton", VirtualKeyCode.MBUTTON },          // マウスの中央ボタン
+                { "xbutton1", VirtualKeyCode.XBUTTON1 },        // X1 マウス ボタン
+                { "xbutton2", VirtualKeyCode.XBUTTON2 },        // X2 マウス ボタン
+                { "back", VirtualKeyCode.BACK },                // Backspace キー
+                { "tab", VirtualKeyCode.TAB },                  // Tab キー
+                { "clear", VirtualKeyCode.CLEAR },              // Clear キー
+                { "return", VirtualKeyCode.RETURN },            // Enter キー
+                { "shift", VirtualKeyCode.SHIFT },              // Shift キー
+                { "control", VirtualKeyCode.CONTROL },          // Ctrl キー
+                { "menu", VirtualKeyCode.MENU },                // ALT キー
+                { "pause", VirtualKeyCode.PAUSE },              // Pause キー
+                { "capital", VirtualKeyCode.CAPITAL },          // CAPS LOCK キー
+                { "kana", VirtualKeyCode.KANA },                // IME かなモード
+                { "hangul", VirtualKeyCode.HANGUL },            // IME ハングル モード
+                { "junja", VirtualKeyCode.JUNJA },              // IME Junja モード
+                { "final", VirtualKeyCode.FINAL },              // IME Final モード
+                { "hanja", VirtualKeyCode.HANJA },              // IME Hanja モード
+                { "kanji", VirtualKeyCode.KANJI },              // IME 漢字モード
+                { "escape", VirtualKeyCode.ESCAPE },            // Esc キー
+                { "convert", VirtualKeyCode.CONVERT },          // IME 変換
+                { "nonconvert", VirtualKeyCode.NONCONVERT },    // IME 無変換
+                { "accept", VirtualKeyCode.ACCEPT },            // IME 使用可能
+                { "space", VirtualKeyCode.SPACE },              // Space キー
+                { "prior", VirtualKeyCode.PRIOR },              // PageUp キー
+                { "next", VirtualKeyCode.NEXT },                // PageDown キー
+                { "end", VirtualKeyCode.END },                  // End キー
+                { "home", VirtualKeyCode.HOME },                // Home キー
+                { "left", VirtualKeyCode.LEFT },                // 左方向キー
+                { "up", VirtualKeyCode.UP },                    // 上方向キー
+                { "right", VirtualKeyCode.RIGHT },              // 右方向キー
+                { "down", VirtualKeyCode.DOWN },                // 下方向キー
+                { "select", VirtualKeyCode.SELECT },            // Select キー
+                { "print", VirtualKeyCode.PRINT },              // Print キー
+                { "execute", VirtualKeyCode.EXECUTE },          // Execute キー
+                { "snapshot", VirtualKeyCode.SNAPSHOT },        // Print Screen キー
+                { "insert", VirtualKeyCode.INSERT },            // Ins キー
+                { "delete", VirtualKeyCode.DELETE },            // DEL キー
+                { "help", VirtualKeyCode.HELP },                // Help キー
+                { "0", VirtualKeyCode.VK_0 },                   // 0 キー
+                { "1", VirtualKeyCode.VK_1 },                   // 1 キー
+                { "2", VirtualKeyCode.VK_2 },                   // 2 キー
+                { "3", VirtualKeyCode.VK_3 },                   // 3 キー
+                { "4", VirtualKeyCode.VK_4 },                   // 4 キー
+                { "5", VirtualKeyCode.VK_5 },                   // 5 キー
+                { "6", VirtualKeyCode.VK_6 },                   // 6 キー
+                { "7", VirtualKeyCode.VK_7 },                   // 7 キー
+                { "8", VirtualKeyCode.VK_8 },                   // 8 キー
+                { "9", VirtualKeyCode.VK_9 },                   // 9 キー
+                { "a", VirtualKeyCode.VK_A },                   // A キー
+                { "b", VirtualKeyCode.VK_B },                   // B キー
+                { "c", VirtualKeyCode.VK_C },                   // C キー
+                { "d", VirtualKeyCode.VK_D },                   // D キー
+                { "e", VirtualKeyCode.VK_E },                   // E キー
+                { "f", VirtualKeyCode.VK_F },                   // F キー
+                { "g", VirtualKeyCode.VK_G },                   // G キー
+                { "h", VirtualKeyCode.VK_H },                   // H キー
+                { "i", VirtualKeyCode.VK_I },                   // I キー
+                { "j", VirtualKeyCode.VK_J },                   // J キー
+                { "k", VirtualKeyCode.VK_K },                   // K キー
+                { "l", VirtualKeyCode.VK_L },                   // L キー
+                { "m", VirtualKeyCode.VK_M },                   // M キー
+                { "n", VirtualKeyCode.VK_N },                   // N キー
+                { "o", VirtualKeyCode.VK_O },                   // O キー
+                { "p", VirtualKeyCode.VK_P },                   // P キー
+                { "q", VirtualKeyCode.VK_Q },                   // Q キー
+                { "r", VirtualKeyCode.VK_R },                   // R キー
+                { "s", VirtualKeyCode.VK_S },                   // S キー
+                { "t", VirtualKeyCode.VK_T },                   // T キー
+                { "u", VirtualKeyCode.VK_U },                   // U キー
+                { "v", VirtualKeyCode.VK_V },                   // V キー
+                { "w", VirtualKeyCode.VK_W },                   // W キー
+                { "x", VirtualKeyCode.VK_X },                   // X キー
+                { "y", VirtualKeyCode.VK_Y },                   // Y キー
+                { "z", VirtualKeyCode.VK_Z },                   // Z キー
+                { "lwin", VirtualKeyCode.LWIN },                // Windows の左キー
+                { "rwin", VirtualKeyCode.RWIN },                // 右の Windows キー
+                { "apps", VirtualKeyCode.APPS },                // アプリケーション キー
+                { "sleep", VirtualKeyCode.SLEEP },              // スリープ キー
+                { "numpad0", VirtualKeyCode.NUMPAD0 },          // テンキーの 0 キー
+                { "numpad1", VirtualKeyCode.NUMPAD1 },          // テンキーの 1 キー
+                { "numpad2", VirtualKeyCode.NUMPAD2 },          // テンキーの 2 キー
+                { "numpad3", VirtualKeyCode.NUMPAD3 },          // テンキーの 3 キー
+                { "numpad4", VirtualKeyCode.NUMPAD4 },          // テンキーの 4 キー
+                { "numpad5", VirtualKeyCode.NUMPAD5 },          // テンキーの 5 キー
+                { "numpad6", VirtualKeyCode.NUMPAD6 },          // テンキーの 6 キー
+                { "numpad7", VirtualKeyCode.NUMPAD7 },          // テンキーの 7 キー
+                { "numpad8", VirtualKeyCode.NUMPAD8 },          // テンキーの 8 キー
+                { "numpad9", VirtualKeyCode.NUMPAD9 },          // テンキーの 9 キー
+                { "multiply", VirtualKeyCode.MULTIPLY },        // 乗算キー
+                { "separator", VirtualKeyCode.SEPARATOR },      // 区切り記号キー
+                { "subtract", VirtualKeyCode.SUBTRACT },        // 減算キー
+                { "decimal", VirtualKeyCode.DECIMAL },          // 10 進キー
+                { "divide", VirtualKeyCode.DIVIDE },            // 除算キー
+                { "f1", VirtualKeyCode.F1 },                    // F1 キー
+                { "f2", VirtualKeyCode.F2 },                    // F2 キー
+                { "f3", VirtualKeyCode.F3 },                    // F3 キー
+                { "f4", VirtualKeyCode.F4 },                    // F4 キー
+                { "f5", VirtualKeyCode.F5 },                    // F5 キー
+                { "f6", VirtualKeyCode.F6 },                    // F6 キー
+                { "f7", VirtualKeyCode.F7 },                    // F7 キー
+                { "f8", VirtualKeyCode.F8 },                    // F8 キー
+                { "f9", VirtualKeyCode.F9 },                    // F9 キー
+                { "f10", VirtualKeyCode.F10 },                  // F10 キー
+                { "f11", VirtualKeyCode.F11 },                  // F11 キー
+                { "f12", VirtualKeyCode.F12 },                  // F12 キー
+                { "f13", VirtualKeyCode.F13 },                  // F13 キー
+                { "f14", VirtualKeyCode.F14 },                  // F14 キー
+                { "f15", VirtualKeyCode.F15 },                  // F15 キー
+                { "f16", VirtualKeyCode.F16 },                  // F16 キー
+                { "f17", VirtualKeyCode.F17 },                  // F17 キー
+                { "f18", VirtualKeyCode.F18 },                  // F18 キー
+                { "f19", VirtualKeyCode.F19 },                  // F19 キー
+                { "f20", VirtualKeyCode.F20 },                  // F20 キー
+                { "f21", VirtualKeyCode.F21 },                  // F21 キー
+                { "f22", VirtualKeyCode.F22 },                  // F22 キー
+                { "f23", VirtualKeyCode.F23 },                  // F23 キー
+                { "f24", VirtualKeyCode.F24 },                  // F24 キー
+                { "numlock", VirtualKeyCode.NUMLOCK },          // NUM LOCK キー
+                { "scroll", VirtualKeyCode.SCROLL },            // ScrollLock キー
+                { "lshift", VirtualKeyCode.LSHIFT },            // 左 Shift キー
+                { "rshift", VirtualKeyCode.RSHIFT },            // 右 Shift キー
+                { "lcontrol", VirtualKeyCode.LCONTROL },        // 左 Ctrl キー
+                { "rcontrol", VirtualKeyCode.RCONTROL },        // 右 Ctrl キー
+                { "lmenu", VirtualKeyCode.LMENU },              // 左 Alt キー
+                { "rmenu", VirtualKeyCode.RMENU },              // 右 Alt キー
+                { "browser_back", VirtualKeyCode.BROWSER_BACK },            // ブラウザーの戻るキー
+                { "browser_forward", VirtualKeyCode.BROWSER_FORWARD },      // ブラウザーの進むキー
+                { "browser_refresh", VirtualKeyCode.BROWSER_REFRESH },      // ブラウザーの更新キー
+                { "browser_stop", VirtualKeyCode.BROWSER_STOP },            // ブラウザーの停止キー
+                { "browser_search", VirtualKeyCode.BROWSER_SEARCH },        // ブラウザーの検索キー
+                { "browser_favorites", VirtualKeyCode.BROWSER_FAVORITES },  // ブラウザーのお気に入りキー
+                { "browser_home", VirtualKeyCode.BROWSER_HOME },            // ブラウザーのホーム キー
+                { "volume_mute", VirtualKeyCode.VOLUME_MUTE },              // 音量ミュート キー
+                { "volume_down", VirtualKeyCode.VOLUME_DOWN },              // 音量下げるキー
+                { "volume_up", VirtualKeyCode.VOLUME_UP },                  // 音量上げるキー
+                { "media_next_track", VirtualKeyCode.MEDIA_NEXT_TRACK },    // 次のトラックキー
+                { "media_prev_track", VirtualKeyCode.MEDIA_PREV_TRACK },    // 前のトラック
+                { "media_stop", VirtualKeyCode.MEDIA_STOP },                // メディアの停止キー
+                { "media_play_pause", VirtualKeyCode.MEDIA_PLAY_PAUSE },    // メディアの再生/一時停止キー
+                { "launch_media_select", VirtualKeyCode.LAUNCH_MEDIA_SELECT },  // メディアの選択キー
+                { "launch_app1", VirtualKeyCode.LAUNCH_APP1 },              // アプリケーション 1 の起動キー
+                { "launch_app2", VirtualKeyCode.LAUNCH_APP2 },              // アプリケーション 2 の起動キー
+                { "oem_1", VirtualKeyCode.OEM_1 },                          // ;: キー (米国標準キーボード)
+                { "+", VirtualKeyCode.OEM_PLUS },                    // + キー
+                { ",", VirtualKeyCode.OEM_COMMA },                  // , キー
+                { "-", VirtualKeyCode.OEM_MINUS },                  // - キー
+                { ".", VirtualKeyCode.OEM_PERIOD },                // . キー
+                { "oem_2", VirtualKeyCode.OEM_2 },                          // /? キー (米国標準キーボード)
+                { "oem_3", VirtualKeyCode.OEM_3 },                          // `~ キー (米国標準キーボード)
+                { "oem_4", VirtualKeyCode.OEM_4 },                          // [{ キー (米国標準キーボード)
+                { "oem_5", VirtualKeyCode.OEM_5 },                          // \| キー (米国標準キーボード)
+                { "oem_6", VirtualKeyCode.OEM_6 },                          // ]} キー (米国標準キーボード)
+                { "oem_7", VirtualKeyCode.OEM_7 },                          // '" キー (米国標準キーボード)
+                { "oem_102", VirtualKeyCode.OEM_102 },                      // <> または \| キー (US 以外のキーボード)
+                { "processkey", VirtualKeyCode.PROCESSKEY },                // IME PROCESS キー
+                { "packet", VirtualKeyCode.PACKET },                        // Unicode 文字
+                { "attn", VirtualKeyCode.ATTN },                            // Attn キー
+                { "crsel", VirtualKeyCode.CRSEL },                          // CrSel キー
+                { "exsel", VirtualKeyCode.EXSEL },                          // ExSel キー
+                { "play", VirtualKeyCode.PLAY },                            // 再生キー
+                { "zoom", VirtualKeyCode.ZOOM },                            // ズーム キー
             };
+
 
             return keyCodeMap.TryGetValue(key.ToLower(), out var keyCode) ? keyCode : null;
         }
