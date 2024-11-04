@@ -5,12 +5,13 @@
   xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
   IgnorableNamespaces="uap rescap">
 
   <Identity
     Name="KeiichiroFukuda.Windows"
     Publisher="CN=1A8B0986-5C85-4F20-8931-1D6C260F51D5"
-    Version="1.1.1.0" />
+    Version="1.1.2.0" />
 
   <mp:PhoneIdentity PhoneProductId="55236d1f-e952-40de-a96e-16e73a480906" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
@@ -42,6 +43,17 @@
         <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
         <uap:SplashScreen Image="Assets\SplashScreen.png" />
       </uap:VisualElements>
+		
+		<Extensions>
+			<uap5:Extension Category="windows.startupTask">
+				<uap5:StartupTask
+				  TaskId="LaunchOnStartupTaskId"
+				  Enabled="false"
+				  DisplayName="LeftDevice" />
+				<!-- 表示名を変更 -->
+			</uap5:Extension>
+		</Extensions>
+		
     </Application>
   </Applications>
 
